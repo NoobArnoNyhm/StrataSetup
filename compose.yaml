@@ -1,0 +1,85 @@
+name: strata-setup
+
+services:
+  strata:
+    image: ${STRATA_IMAGE:?STRATA_IMAGE muss gesetzt sein}
+    environment:
+      FAMILY: ${STRATA_FAMILY:?STRATA_FAMILY muss gesetzt sein}
+      MODEL: ${STRATA_MODEL:?STRATA_MODEL muss gesetzt sein}
+      CONTEXT: ${STRATA_CONTEXT:?STRATA_CONTEXT muss gesetzt sein}
+      PARALLEL: ${STRATA_PARALLEL:-1}
+      VISION: ${STRATA_VISION:-off}
+      API_KEY: ${STRATA_API_KEY:?Zuerst Initialize.ps1 ausfuehren}
+      PORT: "8080"
+      PRESET: docker
+      TUNE: skip
+      STRATA_ALLOWED_HOSTS: strata
+    ports:
+      - target: 8080
+        published: "${STRATA_HOST_PORT:-8080}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: ${STRATA_DATA_DIR:?STRATA_DATA_DIR muss gesetzt sein}
+        target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${STRATA_MODELS_DIR:?STRATA_MODELS_DIR muss gesetzt sein}
+        target: /data/Strata-data/models
+        bind:
+          create_host_path: false
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    shm_size: 2gb
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    stop_grace_period: 2m
+
+  pi-dev:
+    image: stratasetup-pi:local
+    build:
+      context: ./docker/pi
+      args:
+        DOTNET_IMAGE: ${DOTNET_IMAGE:?DOTNET_IMAGE muss gesetzt sein}
+        PI_VERSION: ${PI_VERSION:?PI_VERSION muss gesetzt sein}
+        NODE_MAJOR: ${NODE_MAJOR:-24}
+    init: true
+    user: dev
+    working_dir: /workspace
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      STRATA_BASE_URL: http://strata:8080/v1
+      STRATA_API_KEY: ${STRATA_API_KEY:?Zuerst Initialize.ps1 ausfuehren}
+      STRATA_CONTEXT: ${STRATA_CONTEXT:?STRATA_CONTEXT muss gesetzt sein}
+      STRATA_VISION: ${STRATA_VISION:-off}
+    volumes:
+      - type: bind
+        source: ${WORKSPACE_DIR:?WORKSPACE_DIR muss gesetzt sein}
+        target: /workspace
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${PI_STATE_DIR:?PI_STATE_DIR muss gesetzt sein}
+        target: /home/dev/.pi/agent
+        bind:
+          create_host_path: false
+    depends_on:
+      strata:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/pi-configured"]
+      interval: 10s
+      timeout: 3s
+      start_period: 70s
+      retries: 3
