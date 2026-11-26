@@ -91,6 +91,21 @@ zeigen; die Pfade in der Vorlage sind keine allgemeingueltigen Vorgaben.
 | `STRATA_PARALLEL` | Vorgabe `1`: eine gleichzeitige Modellanfrage |
 | `STRATA_VISION` | Vorgabe `off`: Vision zunaechst ausgeschaltet |
 
+**Kontextgroesse:** Die voreingestellten `32k` sind fuer ernsthafte
+Entwicklungsarbeit zu klein. Im Testsetup funktionierten `128k`, wobei auch
+dieser Kontext in der Praxis noch sehr begrenzt war. Fuer diesen Wert in
+`.env` setzen:
+
+```dotenv
+STRATA_CONTEXT=128k
+```
+
+Ein groesserer Kontext kann mehr Speicher benoetigen; ob er funktioniert,
+haengt unter anderem von Modell und Hardware ab. Nach der Aenderung die
+Initialisierung erneut ausfuehren und die Dienste wie unter
+[Stoppen, Aendern und Aktualisieren](#7-stoppen-aendern-und-aktualisieren)
+beschrieben aktualisieren.
+
 Die Windows-Pfade sind in einfache Anfuehrungszeichen gesetzt, damit Compose
 Backslashes unveraendert uebernimmt. Bestehende Prozess-Umgebungsvariablen
 haben nach Compose-Regeln Vorrang vor den Werten in der Datei.

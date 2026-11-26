@@ -29,7 +29,7 @@ Pi kann Dateien im eingebundenen Workspace lesen, aendern und loeschen.
 Das Setup wurde bisher nur auf einem Rechner mit folgender Ausstattung
 getestet:
 
-- NVIDIA RTX 3080 mit 16 GB VRAM
+- NVIDIA RTX 3080 (mobile) mit 16 GB VRAM
 - 64 GB Arbeitsspeicher
 - Windows mit WSL2 und Docker Desktop
 
@@ -61,6 +61,13 @@ Kontext und weitere Einstellungen koennen in der lokalen `.env` angepasst
 werden. Ein anderes Modell kann andere Anforderungen und Downloads mit sich
 bringen; es wird bei Fehlern nicht automatisch auf ein kleineres Modell
 gewechselt.
+
+**Kontextgroesse:** Die Vorgabe von `32k` ist fuer ernsthafte
+Entwicklungsarbeit zu klein. Im oben beschriebenen Testsetup funktionierte
+`128k`, wobei auch dieser Kontext in der Praxis noch sehr begrenzt war.
+Der Wert kann ueber `STRATA_CONTEXT` in `.env` angepasst werden. Ein
+groesserer Kontext kann mehr Speicher benoetigen und funktioniert nicht
+zwangslaeufig auf anderer Hardware.
 
 ### Entwicklungsumgebung
 
