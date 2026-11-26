@@ -192,27 +192,85 @@ Strata-Healthcheck hat eine Anlaufzeit von zwei Stunden. Falls der Download
 laenger dauert, Logs pruefen und diese Frist gegebenenfalls mit einer lokalen
 Compose-Anpassung verlaengern; nicht unnoetig den Download neu starten.
 
-### Pi benutzen
+### Pi und Strata benutzen
+
+Die folgenden Zugriffe setzen voraus, dass die Container gestartet sind.
+Auf dem Windows-Host im Projektordner pruefen:
+
+```powershell
+docker compose ps
+```
+
+`strata` muss bereit sein, bevor `pi-dev` startet. Beim ersten Start kann
+der Modelldownload lange dauern; den Fortschritt zeigt
+`docker compose logs -f strata`. Die Loganzeige mit `Strg+C` verlassen.
+
+#### Pi ueber PowerShell und Docker Compose
 
 ```powershell
 docker compose exec pi-dev bash
 ```
 
-In der Entwicklungs-Shell ins gewuenschte Projekt wechseln:
+Der Befehl oeffnet eine Bash-Shell **im Entwicklungscontainer**. Dort ins
+gewuenschte Projekt wechseln und Pi starten:
 
 ```bash
 cd /workspace/MeinProjekt
 pi
 ```
 
-Oder direkt aus PowerShell:
+`MeinProjekt` ist ein Beispiel. Es muss ein vorhandenes Verzeichnis unter
+dem in `.env` konfigurierten `WORKSPACE_DIR` sein, das im Container als
+`/workspace` eingebunden ist. In Pi eine Aufgabe eintippen und mit `Enter`
+absenden, zum Beispiel: `Erklaere mir die Struktur dieses Projekts.`
+
+Pi wird fuer den lokalen Strata-Server konfiguriert; ein Cloud-Login ist
+nicht erforderlich. Pi und seine Werkzeuge koennen im eingebundenen
+Workspace Dateien lesen, aendern und loeschen.
+
+Alternativ Pi direkt aus der PowerShell auf dem Host im Projektverzeichnis
+starten:
 
 ```powershell
 docker compose exec -w /workspace/MeinProjekt pi-dev pi
 ```
 
-Kein Provider-Login erforderlich. Das Webfrontend ist auf dem Host unter
-**http://127.0.0.1:8080** erreichbar; bei geaendertem Host-Port die URL anpassen.
+Fuer PowerShell statt Bash im Entwicklungscontainer:
+
+```powershell
+docker compose exec pi-dev pwsh -NoLogo
+```
+
+#### Pi mit `docker exec` oder Docker Desktop
+
+Statt Compose kann auch `docker exec` verwendet werden. Im Projektordner
+zunaechst die ID des laufenden Entwicklungscontainers ermitteln:
+
+```powershell
+$piContainer = docker compose ps -q pi-dev
+docker exec -it $piContainer bash
+```
+
+In der Container-Shell danach wie oben `cd /workspace/MeinProjekt` und
+`pi` ausfuehren. `docker ps` zeigt ebenfalls laufende Container mit Namen
+und IDs.
+
+In Docker Desktop unter **Containers** das Compose-Projekt `strata-setup`
+aufklappen, den laufenden Container `pi-dev` auswaehlen und den Tab
+**Exec** oeffnen. Im Terminal `cd /workspace/MeinProjekt` und anschliessend
+`pi` ausfuehren. Ist Docker Debug aktiviert, wird statt **Exec** der Tab
+**Debug** angezeigt. Die verfuegbaren Ansichten koennen je nach
+Docker-Desktop-Version und Einstellung abweichen.
+
+#### Strata-Webfrontend aufrufen
+
+Auf dem Windows-Host einen Browser oeffnen und
+[http://127.0.0.1:8080](http://127.0.0.1:8080) aufrufen. Der Port ist
+standardmaessig an `127.0.0.1` gebunden: Das Frontend ist damit auf diesem
+Rechner, aber nicht ueber die Netzwerkadresse von anderen Geraeten
+erreichbar. Bei geaendertem `STRATA_HOST_PORT` den Port in der Browseradresse
+entsprechend anpassen.
+
 Falls das Frontend den API-Key anfordert, diesen lokal aus [.env](.env)
 uebernehmen. Nicht in Screenshots, Logs oder Commits veroeffentlichen.
 
