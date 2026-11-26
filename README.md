@@ -10,7 +10,8 @@ zuzugreifen.
 
 Das Projekt eignet sich beispielsweise, um mit einem lokalen Sprachmodell
 Quellcode zu erklaeren, Aenderungen vorzubereiten und Projekte mit Pi zu
-bearbeiten. Das Modell laeuft ueber Strata auf der eigenen Hardware; fuer die
+bearbeiten. Bei angemessenen Einstellungen, ist lokales Vibecoding möglich.
+Das Modell laeuft ueber Strata auf der eigenen Hardware; fuer die
 Modellabfragen ist kein Cloud-Provider-Login erforderlich.
 
 **Lokal bedeutet nicht automatisch offline:** Fuer Images, Pakete und den
