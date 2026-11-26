@@ -4,7 +4,9 @@ StrataSetup richtet eine lokale KI-gestuetzte Entwicklungsumgebung unter
 Windows ein. Sie kombiniert den Modellserver
 [Strata](https://github.com/Niko1221/Strata) mit dem Coding-Agenten
 [Pi](https://github.com/badlogic/pi-mono) und einer Linux-Entwicklungsumgebung
-in Docker-Containern.
+in Docker-Containern. Damit ist es fast als Sandbox zu betrachten, da es Pi 
+erheblich erschwert wird, direkt auf das Betriebssystem des Hostrechners 
+zuzugreifen.
 
 Das Projekt eignet sich beispielsweise, um mit einem lokalen Sprachmodell
 Quellcode zu erklaeren, Aenderungen vorzubereiten und Projekte mit Pi zu
