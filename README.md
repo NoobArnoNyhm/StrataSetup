@@ -68,6 +68,8 @@ Das Entwicklungsimage enthaelt unter anderem:
 
 - .NET 10 SDK und ASP.NET Core sowie `csharp-ls`, `dotnet-ef`, `csharpier`
   und `dotnet-outdated`
+- PowerShell 7 (`pwsh`) zum Entwickeln und Testen plattformuebergreifender
+  PowerShell-Skripte
 - Python 3 mit `pip`, `venv` und Buildwerkzeugen
 - Node.js, npm und den Coding-Agenten Pi
 - Git, GitHub CLI, OpenSSH-Client, curl, jq, ripgrep, tree und Midnight Commander
@@ -75,6 +77,8 @@ Das Entwicklungsimage enthaelt unter anderem:
 Die Werkzeuge laufen im Linux-Container. Plattformuebergreifende .NET- und
 ASP.NET-Projekte sind vorgesehen; WPF, WinForms und Anwendungen fuer das
 Windows-.NET-Framework laufen dort nicht.
+Ebenso muessen Windows-spezifische PowerShell-Funktionen auf Windows getestet
+werden. Pester ist nicht vorinstalliert.
 
 ## Voraussetzungen
 
@@ -254,6 +258,12 @@ Status pruefen und eine Shell im Entwicklungscontainer oeffnen:
 ```powershell
 docker compose ps
 docker compose exec pi-dev bash
+```
+
+Fuer PowerShell statt Bash:
+
+```powershell
+docker compose exec pi-dev pwsh -NoLogo
 ```
 
 In der Shell ein Projekt im eingebundenen Workspace auswaehlen und Pi starten:

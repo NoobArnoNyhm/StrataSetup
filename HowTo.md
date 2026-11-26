@@ -235,7 +235,7 @@ Es gibt keinen automatischen Cloud-Fallback und keine andere Modellwahl bei
 Fehlern. Zugangsdaten, die man selbst spaeter fuer `strata` in Pi's `auth.json`
 speichert, koennen gemaess Pi-Prioritaet den Umgebungs-Key uebersteuern.
 
-## 6. Python und .NET
+## 6. Python, .NET und PowerShell
 
 Das Image enthaelt das .NET-10-SDK, die Runtime und ASP.NET Core.
 Plattformuebergreifende .NET-/ASP.NET-Projekte sind vorgesehen, nicht das
@@ -256,6 +256,26 @@ Keine globalen pip-Installationen mit `--break-system-packages`.
 Linux- und Windows-venvs, `node_modules` und Build-Ausgaben nicht mischen.
 GitHub CLI ist installiert; fuer authentifizierte Aktionen ist eine Anmeldung
 erforderlich.
+
+Das .NET-SDK-Basisimage enthaelt PowerShell 7 (`pwsh`). Damit lassen sich
+plattformuebergreifende PowerShell-Skripte im Container entwickeln und testen:
+
+```powershell
+docker compose exec pi-dev pwsh -NoLogo
+```
+
+In PowerShell im Container beispielsweise ein Skript ausfuehren:
+
+```powershell
+& /workspace/MeinProjekt/script.ps1
+```
+
+Der Container laeuft unter Linux. Windows-spezifische Funktionen wie Registry,
+COM und Windows-PowerShell-5.1-Module muessen auf Windows getestet werden.
+Pester ist nicht vorinstalliert; bei Bedarf kann es fuer den Benutzer `dev`
+installiert werden. Im Container-Home installierte Module ausserhalb des
+Pi-Bind-Mounts sind nach einem Neuerstellen nicht dauerhaft vorhanden.
+Ein selbst gewaehltes `DOTNET_IMAGE` muss ebenfalls `pwsh` enthalten.
 
 Caches und weitere Dateien im Container-Home ausserhalb des Pi-Bind-Mounts
 sind absichtlich nicht persistent; nach einem Neuerstellen koennen Restore

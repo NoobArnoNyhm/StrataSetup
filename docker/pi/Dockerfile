@@ -61,5 +61,6 @@ ENV HOME=/home/dev \
 
 USER dev
 WORKDIR /workspace
+RUN pwsh -NoLogo -NoProfile -NonInteractive -Command '$PSVersionTable.PSVersion.ToString()'
 ENTRYPOINT ["/opt/pi/entrypoint.sh"]
 CMD ["sleep", "infinity"]
