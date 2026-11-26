@@ -11,7 +11,7 @@ COPY --from=node /usr/local/ /usr/local/
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        bash build-essential ca-certificates curl git jq libatomic1 \
+        bash build-essential ca-certificates curl git jq libatomic1 mc \
         openssh-client python3 python3-dev python3-pip python3-venv \
         ripgrep tree \
     && install -d -m 0755 /etc/apt/keyrings \
@@ -38,11 +38,17 @@ RUN useradd --create-home --uid 10001 --shell /bin/bash dev \
         /home/dev/.pi /home/dev/.pi/agent \
         /home/dev/.nuget /home/dev/.nuget/packages
 
+RUN dotnet tool install --tool-path /opt/dotnet-tools csharp-ls --version 0.28.0 \
+    && dotnet tool install --tool-path /opt/dotnet-tools dotnet-ef --version '10.*' \
+    && dotnet tool install --tool-path /opt/dotnet-tools csharpier \
+    && dotnet tool install --tool-path /opt/dotnet-tools dotnet-outdated-tool
+
 COPY --chmod=0755 entrypoint.sh /opt/pi/entrypoint.sh
 COPY configure.py /opt/pi/configure.py
 RUN sed -i 's/\r$//' /opt/pi/entrypoint.sh
 
 ENV HOME=/home/dev \
+    PATH=/opt/dotnet-tools:${PATH} \
     PI_CODING_AGENT_DIR=/home/dev/.pi/agent \
     PI_SKIP_VERSION_CHECK=1 \
     DOTNET_CLI_HOME=/home/dev \

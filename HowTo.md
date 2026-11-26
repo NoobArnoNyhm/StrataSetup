@@ -4,12 +4,10 @@ Das Setup liegt vollstaendig in diesem Ordner. Es besteht aus zwei
 Linux-Containern: Strata als lokalem Modellserver und einem selbst gebauten
 .NET-10-/Python-Entwicklungscontainer mit Pi.
 
-**Wichtig fuer den ersten Start:** Docker sieht auf diesem Rechner aktuell
-nur rund 31 GiB RAM. Vor dem Modellstart WSL2 mehr RAM zugestehen, beispielsweise
-48 GB. Die WSL-Konfiguration wurde nicht veraendert. Auf ausdruecklichen Wunsch
-wurde auch der grosse Modelldownload noch nicht gestartet.
+**Wichtig fuer den ersten Start:** Vor dem Modellstart den fuer Docker
+verfuegbaren RAM pruefen und gegebenenfalls die WSL2-Grenze anpassen.
 
-## 1. Bereits eingerichtet
+## 1. Bestandteile
 
 - [compose.yaml](compose.yaml): Strata mit NVIDIA-GPU und ausschliesslich
   lokalem Host-Port sowie ein Nicht-Root-Entwicklungscontainer.
@@ -21,23 +19,18 @@ wurde auch der grosse Modelldownload noch nicht gestartet.
   validiert Compose. Startet keine Container und aendert WSL nicht.
 - [configure.py](docker/pi/configure.py): ermittelt die echte Modell-ID
   von Strata und richtet Pi beim Start automatisch ein.
-- [.env](.env): lokale Einstellungen, einschliesslich vorbereitetem API-Key.
-  Diese Datei ist in [.gitignore](.gitignore) ausgeschlossen.
+- [.env](.env): lokale Einstellungen und API-Key. Diese Datei wird bei Bedarf
+  aus der Vorlage erstellt und ist in [.gitignore](.gitignore) ausgeschlossen.
 - [.env.example](.env.example): Vorlage ohne Zugangsdaten.
 - [Tests](tests/test_configure.py): Konfiguration, Fehlerfaelle und ein
   echter Pi-Aufruf mit Streaming und Werkzeugausfuehrung gegen eine lokale
   Test-API, ohne externen Modellanbieter.
 
-Die beiden Images sind lokal gebaut beziehungsweise geladen. Keine
-dauerhaften Container wurden gestartet; die Modellverzeichnisse sind noch leer.
-
 ## 2. Voraussetzungen und WSL-RAM
 
-Verwendete Hardware: RTX 3080 Laptop GPU mit 16 GB VRAM und 64 GB Host-RAM.
-Der erkannte NVIDIA-Treiber 596.52 passt zum CUDA-13-Image.
-
 Erforderlich sind Docker Desktop mit WSL2-Backend, Linux-Container und
-funktionierender NVIDIA-GPU-Durchreichung.
+funktionierender NVIDIA-GPU-Durchreichung. Der NVIDIA-Treiber muss mit dem
+gewaehlten CUDA-Image kompatibel sein.
 
 In PowerShell pruefen:
 
@@ -73,20 +66,30 @@ neu starten und `MemTotal` erneut pruefen.
 
 ## 3. Einstellungen und Bind-Mounts
 
-Alle Vorgaben stehen in [.env](.env):
+Falls noch keine [.env](.env) existiert, die Vorlage kopieren:
 
-| Variable | Vorgabe | Verwendung |
-| --- | --- | --- |
-| `STRATA_DATA_DIR` | `C:\00KiData\StrataLLM\data` | Strata: `/data`, Konfiguration und weitere persistente Daten |
-| `STRATA_MODELS_DIR` | `C:\00KiData\StrataLLM\models` | Strata: `/data/Strata-data/models`, Modellgewichte |
-| `PI_STATE_DIR` | `C:\00KiData\StrataLLM\pi-agent` | Pi: `/home/dev/.pi/agent`, Konfiguration und Sitzungen |
-| `WORKSPACE_DIR` | `C:\Users\Arno_NyhmM\source\repos` | Entwicklung: `/workspace` |
-| `STRATA_HOST_PORT` | `8080` | Ausschliesslich an `127.0.0.1` gebundener Host-Port |
-| `STRATA_FAMILY` | `qwen` | Originale ISTA-DASLab-Packs fuer Qwen3.8-Flash-Next |
-| `STRATA_MODEL` | `IQ2_XS` | Unterstuetzte Quantisierung, nicht die API-Modell-ID |
-| `STRATA_CONTEXT` | `32k` | Server- und Pi-Kontext: 32768 Tokens |
-| `STRATA_PARALLEL` | `1` | Eine gleichzeitige Modellanfrage |
-| `STRATA_VISION` | `off` | Vision zunaechst ausgeschaltet |
+```powershell
+if (-not (Test-Path -LiteralPath .env)) {
+    Copy-Item -LiteralPath .env.example -Destination .env
+}
+```
+
+In [.env](.env) die Bind-Mount-Pfade an den eigenen Rechner anpassen.
+Insbesondere muss `WORKSPACE_DIR` auf ein bereits vorhandenes Verzeichnis
+zeigen; die Pfade in der Vorlage sind keine allgemeingueltigen Vorgaben.
+
+| Variable | Verwendung |
+| --- | --- |
+| `STRATA_DATA_DIR` | Strata: `/data`, Konfiguration und weitere persistente Daten |
+| `STRATA_MODELS_DIR` | Strata: `/data/Strata-data/models`, Modellgewichte |
+| `PI_STATE_DIR` | Pi: `/home/dev/.pi/agent`, Konfiguration und Sitzungen |
+| `WORKSPACE_DIR` | Entwicklung: `/workspace` |
+| `STRATA_HOST_PORT` | Vorgabe `8080`: ausschliesslich an `127.0.0.1` gebundener Host-Port |
+| `STRATA_FAMILY` | Vorgabe `qwen`: originale ISTA-DASLab-Packs fuer Qwen3.8-Flash-Next |
+| `STRATA_MODEL` | Vorgabe `IQ2_XS`: unterstuetzte Quantisierung, nicht die API-Modell-ID |
+| `STRATA_CONTEXT` | Vorgabe `32k`: Server- und Pi-Kontext mit 32768 Tokens |
+| `STRATA_PARALLEL` | Vorgabe `1`: eine gleichzeitige Modellanfrage |
+| `STRATA_VISION` | Vorgabe `off`: Vision zunaechst ausgeschaltet |
 
 Die Windows-Pfade sind in einfache Anfuehrungszeichen gesetzt, damit Compose
 Backslashes unveraendert uebernimmt. Bestehende Prozess-Umgebungsvariablen
@@ -110,10 +113,22 @@ Compose selbst legt keine fehlenden Bind-Quellen an.
 
 Alle PowerShell-Befehle in diesem Projektordner ausfuehren.
 
+### Alles initialisieren und starten
+
+Nach Pruefung der RAM- und Speicheranforderungen kann dieses Skript
+Initialisierung und Start beider Compose-Services uebernehmen:
+
+```powershell
+.\initialize_and_start.ps1
+```
+
+Es startet `strata` und `pi-dev`; `pi-dev` wartet, bis `strata` gesund ist.
+Fuer einen schrittweisen Erststart stattdessen die folgenden Abschnitte nutzen.
+
 ### Initialisierung und Build
 
-Diese Schritte sind auf diesem Rechner bereits erfolgt und koennen wiederholt
-werden. Ein vorhandener API-Key wird nicht neu erzeugt.
+Diese Schritte koennen wiederholt werden. Ein vorhandener API-Key wird nicht
+neu erzeugt.
 
 ```powershell
 .\Initialize.ps1
@@ -225,6 +240,9 @@ speichert, koennen gemaess Pi-Prioritaet den Umgebungs-Key uebersteuern.
 Das Image enthaelt das .NET-10-SDK, die Runtime und ASP.NET Core.
 Plattformuebergreifende .NET-/ASP.NET-Projekte sind vorgesehen, nicht das
 Ausfuehren von WPF/WinForms oder Windows-.NET-Framework-Anwendungen.
+Die .NET-Tools `csharp-ls`, `dotnet-ef`, `csharpier` und `dotnet-outdated`
+stehen dem Benutzer `dev` ueber den Suchpfad zur Verfuegung. Fuer das
+.NET-10-SDK werden `csharp-ls` 0.28.0 und `dotnet-ef` 10.x installiert.
 
 Python-Projekte in einer eigenen virtuellen Umgebung betreiben:
 
@@ -236,7 +254,8 @@ python -m pip install -r requirements.txt
 
 Keine globalen pip-Installationen mit `--break-system-packages`.
 Linux- und Windows-venvs, `node_modules` und Build-Ausgaben nicht mischen.
-GitHub CLI ist installiert, aber nicht mit einem Benutzerkonto angemeldet.
+GitHub CLI ist installiert; fuer authentifizierte Aktionen ist eine Anmeldung
+erforderlich.
 
 Caches und weitere Dateien im Container-Home ausserhalb des Pi-Bind-Mounts
 sind absichtlich nicht persistent; nach einem Neuerstellen koennen Restore
@@ -309,7 +328,9 @@ innerhalb des Containers ausfuehren; die Engine gehoert zum Image.
 ## 9. Tests wiederholen
 
 Die Konfigurations- und Pi-Integrationstests benoetigen kein Modell und
-keinen Internetzugriff. Nach einem Image-Neubau in PowerShell:
+keinen Internetzugriff. Sie simulieren nur das API-Protokoll und pruefen
+nicht die Modellqualitaet oder die Strata-/Pi-Inferenzverbindung mit einem
+echten Modell. Nach einem Image-Neubau in PowerShell:
 
 ```powershell
 $tests = Join-Path (Get-Location) 'tests'
@@ -338,31 +359,7 @@ docker compose run --rm --no-deps strata strata components engine
 | Pi meldet HTTP 401/403 | Key-Abgleich und gegebenenfalls gespeicherten `strata`-Eintrag in Pi's `auth.json` pruefen. |
 | Ungueltige Pi-JSON-Datei | Genannte Datei im Pi-Bind-Verzeichnis korrigieren; vorher sichern. Kein automatisches Loeschen der Sitzungen. |
 | Mehrere Modell-IDs | Dieses Setup erwartet einen Einzelmodellserver; keine beliebige ID automatisch auswaehlen. |
-| .NET meldet Workload-Verifizierung | Das SDK kann ohne optionale Workloads einen Hinweis zeigen. Der normale `net10.0`-Build wurde erfolgreich getestet. Workloads nur bei konkretem Projektbedarf installieren. |
-
-## 11. Verifikation auf diesem Rechner
-
-Stand: 20.11.2026.
-
-- Compose-Konfiguration, feste IPv4-Loopback-Portbindung und Pflicht-Key
-  geprueft; ein leerer Key wird abgewiesen.
-- Initialisierung wiederholt: Key und bestehende Einstellungen unveraendert.
-- Entwicklungsimage gebaut: .NET SDK 10.0.404, Python 3.12.3, Node.js
-  24.22.3 und Pi 1.6.0 sowie alle verlangten CLI-Werkzeuge vorhanden.
-- Nicht-Root-Zugriff auf die Windows-Workspace- und Pi-Bind-Mounts geprueft.
-- Alle acht Konfigurations- und Integrationstests erfolgreich, einschliesslich
-  echtem Pi-CLI-Aufruf, Streaming, Dateischreib-Tool und Startskript.
-- Kleine `net10.0`-Konsolenanwendung unter Nicht-Root gebaut und ausgefuehrt.
-- Python-venv erstellt und Python sowie pip darin erfolgreich ausgefuehrt.
-- Strata-Image geladen; enthaltene Engine 0.1.63 erkennt Linux/CUDA ueber
-  NVIDIA-Passthrough.
-- Modellinstallation, echter Strata-Inferenzaufruf, Weboberflaeche unter
-  Modelllast und Neustart ohne erneuten Modelldownload sind **noch nicht
-  getestet**, weil RAM-Anpassung und Modelldownload bewusst spaeter erfolgen.
-
-Die lokalen Tests simulieren nur das API-Protokoll. Sie belegen die Pi-
-Konfiguration und Werkzeugschleife, nicht die Modellqualitaet oder eine
-vollstaendig getestete Strata-/Pi-Inferenzverbindung.
+| .NET meldet Workload-Verifizierung | Das SDK kann ohne optionale Workloads einen Hinweis zeigen. Workloads nur bei konkretem Projektbedarf installieren. |
 
 ## Quellen
 

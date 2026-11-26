@@ -1,12 +1,18 @@
+# Initialisiert die lokale Umgebung, ohne Container zu starten.
+# Erstellt bei Bedarf .env, setzt einen zufaelligen API-Key und prueft
+# anschliessend Compose-Konfiguration, Bind-Mounts und den Docker-RAM.
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+# Relative Pfade sollen sich immer auf den Speicherort dieses Skripts beziehen.
 Push-Location $PSScriptRoot
 try {
     if (-not (Test-Path -LiteralPath '.env')) {
         Copy-Item -LiteralPath '.env.example' -Destination '.env'
     }
 
+    # Die .env muss genau einen API-Key enthalten; ein leerer Wert wird sicher
+    # generiert und gespeichert, aber nicht in der Ausgabe offengelegt.
     $envPath = Join-Path $PSScriptRoot '.env'
     $text = [System.IO.File]::ReadAllText($envPath)
     $keyPattern = '(?m)^STRATA_API_KEY=([^\r\n]*)'
@@ -33,6 +39,8 @@ try {
         throw 'STRATA_API_KEY muss mindestens 16 Zeichen enthalten.'
     }
 
+    # Compose prueft die aufgeloeste Konfiguration. Die zweite Pruefung stellt
+    # sicher, dass auch ein ueberschreibender Prozess-Umgebungswert lang genug ist.
     $json = & docker compose --env-file $envPath config --format json --no-path-resolution
     if ($LASTEXITCODE -ne 0) {
         throw 'Docker-Compose-Konfiguration ist ungueltig.'
@@ -43,6 +51,8 @@ try {
         throw 'Der effektive API-Key ist zu kurz. Auch Prozess-Umgebungsvariablen pruefen.'
     }
 
+    # Alle Bind-Mount-Quellen muessen Windows-Pfade sein. Den Workspace nur
+    # validieren, andere Quellen (z. B. Konfigurationsordner) bei Bedarf anlegen.
     $mounts = @($config.services.strata.volumes) + @($config.services.'pi-dev'.volumes)
     foreach ($mount in $mounts) {
         $source = $mount.source
@@ -60,6 +70,8 @@ try {
         Write-Host "Bind-Mount vorbereitet: $source"
     }
 
+    # Der Hinweis macht auf eine moegliche WSL2-Speicherbegrenzung aufmerksam;
+    # die Skriptausfuehrung aendert diese Einstellung bewusst nicht.
     $memory = & docker info --format '{{.MemTotal}}'
     if ($LASTEXITCODE -ne 0) {
         throw 'Docker-Daemon ist nicht erreichbar.'
@@ -70,5 +82,6 @@ try {
     Write-Host 'Initialisierung abgeschlossen. Es wurden keine Container gestartet.'
 }
 finally {
+    # Den vorherigen Arbeitsordner auch bei Fehlern wiederherstellen.
     Pop-Location
 }
